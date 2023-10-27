@@ -1,0 +1,34 @@
+version: 3
+
+dotenv: ['.env']
+
+
+tasks:
+  setup:
+    desc: Install dependencies
+    cmds:
+      - go mod tidy
+  fmt:
+    desc: gofumpt all code
+    cmds:
+      - gofmt -w -l .
+        #- gofumpt -w -l .
+
+  build:
+    cmds:
+      - go 
+  run:
+    cmds:
+      - go run cmd/main.go
+
+  release:
+    desc: Create a new tag
+    vars:
+      NEXT:
+        sh: svu n
+    cmds:
+      - echo {{.NEXT}}
+        #- git tag {{.NEXT}}
+        #- echo {{.NEXT}}
+        #- git push origin --tags
+
