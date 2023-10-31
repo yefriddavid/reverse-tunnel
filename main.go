@@ -13,6 +13,7 @@ package main
 
 import (
 	"flag"
+	"time"
 	"fmt"
 	goversion "github.com/caarlos0/go-version"
 	"golang.org/x/crypto/ssh"
@@ -25,6 +26,7 @@ import (
 )
 
 var (
+	action                  = flag.String("action", "reverse-tunnel", "reverse-tunnel, fordard-ports")
 	argServerSshKeyFile   = flag.String("serverSshKeyFile", "", "ssh key file")
 	argServerSshUsername  = flag.String("serverSshUsername", "", "ssh username")
 	argServerSshPort      = flag.String("serverSshPort", "", "ssh port")
@@ -42,7 +44,6 @@ var (
 	date      = ""
 	builtBy   = ""
 )
-
 var serverSshKeyFile string = ""
 var serverSshUsername string = ""
 var serverSshPort string = ""
@@ -51,6 +52,15 @@ var remoteEndpointHost string = ""
 var remoteEndpointPort string = ""
 var localEndpointPort string = ""
 var localEndpointHost string = ""
+
+//var serverSshKeyFile string = "/mnt/Zeus/Workspace/traze/sec/tzweb-api.pem"
+//var serverSshUsername string = "ubuntu"
+//var serverSshPort string = "51122"
+//var serverEndpointHost string = "3.92.69.78"
+//var remoteEndpointHost string = "0.0.0.0"
+//var remoteEndpointPort string = "8082"
+//var localEndpointPort string = "8082"
+//var localEndpointHost string = "localhost"
 
 const website = "https://goreleaser.com"
 
@@ -70,22 +80,58 @@ func (endpoint *Endpoint) String() string {
 // Will use io.Copy - http://golang.org/pkg/io/#Copy
 
 func init() {
-
 	flag.Parse()
-	if serverSshKeyFile != "" {
+
+    readCommonParameters();
+	switch ac := *action; ac {
+	case "reverse-tunnel":
+        readParamsReverseTunnel();
+	case "port-forwarding":
+        //readParamsReverseTunnel();
+        readParamsFordardPorts();
+	default:
+		// freebsd, openbsd,
+		// plan9, windows...
+		fmt.Printf("Not Action Valid! %s.\n", ac)
+    }
+}
+
+func main() {
+
+
+	switch ac := *action; ac {
+	case "reverse-tunnel":
+        startReverseTunnel();
+	case "port-forwarding":
+        startPortForwarind();
+	default:
+		fmt.Printf("Not Action Valid! %s.\n", ac)
+    }
+}
+
+
+func readParamsFordardPorts() {
+
+}
+func readParamsReverseTunnel() {
+
+}
+func readCommonParameters() {
+
+	if serverSshKeyFile == "" {
         if serverSshKeyFile = os.Getenv("SERVER_SSH_KEY_FILE"); serverSshKeyFile == "" {
             serverSshKeyFile = *argServerSshKeyFile
         }
     }
 
-	if serverSshUsername != "" {
+	if serverSshUsername == "" {
         if serverSshUsername = os.Getenv("SERVER_SSH_USERNAME"); serverSshUsername == "" {
             serverSshUsername = *argServerSshUsername
         }
 	}
 
-	if serverSshPort != "" {
-        if serverSshPort := os.Getenv("SERVER_SSH_PORT"); serverSshPort == "" {
+	if serverSshPort == "" {
+        if serverSshPort = os.Getenv("SERVER_SSH_PORT"); serverSshPort == "" {
             serverSshPort = *argServerSshPort
         } else {
             //serverSshPort, _ = strconv.Atoi(envServerSshPort)
@@ -93,35 +139,36 @@ func init() {
     }
 
 	// if remoteEndpointHost = os.Getenv("SERVER_ENDPOINT_HOST");remoteEndpointHost== "" {
-	if serverEndpointHost != "" {
+	if serverEndpointHost == "" {
         if serverEndpointHost = os.Getenv("SERVER_ENDPOINT_HOST"); serverEndpointHost == "" {
             serverEndpointHost = *argRemoteEndpointHost
         }
 	}
 
-	if remoteEndpointHost != "" {
+	if remoteEndpointHost == "" {
         if remoteEndpointHost = os.Getenv("REMOTE_ENDPOINT_HOST"); remoteEndpointHost == "" {
             remoteEndpointHost = *argRemoteEndpointHost
         }
     }
 
-	if remoteEndpointPort != "" {
-        if remoteEndpointPort := os.Getenv("REMOTE_ENDPOINT_PORT"); remoteEndpointPort == "" {
+	if remoteEndpointPort == "" {
+        if remoteEndpointPort = os.Getenv("REMOTE_ENDPOINT_PORT"); remoteEndpointPort == "" {
             remoteEndpointPort = *argRemoteEndpointPort
         } else {
             //remoteEndpointPort, _ = strconv.Atoi(envRemoteEndpointPort)
         }
+
     }
 
-	if localEndpointPort != "" {
-        if localEndpointPort := os.Getenv("LOCAL_ENDPOINT_PORT"); localEndpointPort == "" {
+	if localEndpointPort == "" {
+        if localEndpointPort = os.Getenv("LOCAL_ENDPOINT_PORT"); localEndpointPort == "" {
             localEndpointPort = *argLocalEndpointPort
         } else {
             // localEndpointPort, _ = strconv.Atoi(envLocalEndpointPort)
         }
     }
 
-	if localEndpointHost != "" {
+	if localEndpointHost == "" {
         if localEndpointHost = os.Getenv("LOCAL_ENDPOINT_HOST"); localEndpointHost == "" {
             localEndpointHost = *argLocalEndpointHost
         }
@@ -144,17 +191,88 @@ func init() {
 		Port: argLocalEndpointPort,
 	}
 
-fmt.Println(serverSshKeyFile)
-fmt.Println(serverSshUsername)
-fmt.Println(serverSshPort)
-fmt.Println(serverEndpointHost)
-fmt.Println(remoteEndpointHost)
-fmt.Println(remoteEndpointPort)
-fmt.Println(localEndpointPort)
-fmt.Println(localEndpointHost)
+    fmt.Println("serverSshKeyFile", serverSshKeyFile)
+    fmt.Println("serverSshUsername", "**********")
+    fmt.Println("serverSshPort", serverSshPort)
+    fmt.Println("serverEndpointHost", serverEndpointHost)
+    fmt.Println("remoteEndpointHost", remoteEndpointHost)
+    fmt.Println("remoteEndpointPort", remoteEndpointPort)
+    fmt.Println("localEndpointPort", localEndpointPort)
+    fmt.Println("localEndpointHost", localEndpointHost)
 }
 
-func handleClient(client net.Conn, remote net.Conn) {
+func startPortForwarind() {
+	// ln, err := net.Listen("tcp", ":8000")
+	fmt.Println(localEndpoint.String())
+    if true {
+        //return
+    }
+	ln, err := net.Listen("tcp", localEndpoint.String())
+	if err != nil {
+		panic(err)
+	}
+
+	for {
+		conn, err := ln.Accept()
+		if err != nil {
+			panic(err)
+		}
+
+		go handleRequestPortForwarding(conn)
+	}
+
+}
+func startReverseTunnel() {
+
+	// refer to https://godoc.org/golang.org/x/crypto/ssh for other authentication types
+	sshConfig := &ssh.ClientConfig{
+		// SSH connection username
+		// User: "ubuntu",
+		User: serverSshUsername,
+		Auth: []ssh.AuthMethod{
+			// put here your private key path
+			// publicKeyFile("/mnt/Zeus/Workspace/traze/sec/tzweb-api.pem"),
+			publicKeyFile(serverSshKeyFile),
+		},
+		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
+	}
+
+	// Connect to SSH remote server using serverEndpoint
+
+	serverConn, err := ssh.Dial("tcp", serverEndpoint.String(), sshConfig)
+	if err != nil {
+		log.Fatalln(fmt.Printf("Dial INTO remote server error: %s", err))
+	}
+
+	// Listen on remote server port
+	listener, err := serverConn.Listen("tcp", remoteEndpoint.String())
+	if err != nil {
+		log.Fatalln(fmt.Printf("Listen open port ON remote server error: %s", err))
+	}
+	defer listener.Close()
+
+	// handle incoming connections on reverse forwarded tunnel
+	for {
+		// Open a (local) connection to localEndpoint whose content will be forwarded so serverEndpoint
+		local, err := net.Dial("tcp", localEndpoint.String())
+		if err != nil {
+			// log.Fatalln(fmt.Printf("Dial INTO local service error: %s", err))
+			log.Println(fmt.Printf("Dial INTO local service error: %s", err))
+            time.Sleep(5 * time.Second)
+            //continue
+		} else {
+
+            client, err := listener.Accept()
+            if err != nil {
+                log.Fatalln(err)
+            }
+
+            handleClientReverseTunnel(client, local)
+        }
+	}
+}
+
+func handleClientReverseTunnel(client net.Conn, remote net.Conn) {
 	defer client.Close()
 	chDone := make(chan bool)
 
@@ -213,53 +331,6 @@ func main2() {
 	fmt.Println(serverEndpoint.String())
 
 }
-func main() {
-
-	// refer to https://godoc.org/golang.org/x/crypto/ssh for other authentication types
-	sshConfig := &ssh.ClientConfig{
-		// SSH connection username
-		// User: "ubuntu",
-		User: serverSshUsername,
-		Auth: []ssh.AuthMethod{
-			// put here your private key path
-			// publicKeyFile("/mnt/Zeus/Workspace/traze/sec/tzweb-api.pem"),
-			publicKeyFile(serverSshKeyFile),
-		},
-		HostKeyCallback: ssh.InsecureIgnoreHostKey(),
-	}
-
-	// Connect to SSH remote server using serverEndpoint
-
-	serverConn, err := ssh.Dial("tcp", serverEndpoint.String(), sshConfig)
-	if err != nil {
-		log.Fatalln(fmt.Printf("Dial INTO remote server error: %s", err))
-	}
-
-	// Listen on remote server port
-	listener, err := serverConn.Listen("tcp", remoteEndpoint.String())
-	if err != nil {
-		log.Fatalln(fmt.Printf("Listen open port ON remote server error: %s", err))
-	}
-	defer listener.Close()
-
-	// handle incoming connections on reverse forwarded tunnel
-	for {
-		// Open a (local) connection to localEndpoint whose content will be forwarded so serverEndpoint
-		local, err := net.Dial("tcp", localEndpoint.String())
-		if err != nil {
-			log.Fatalln(fmt.Printf("Dial INTO local service error: %s", err))
-		}
-
-		client, err := listener.Accept()
-		if err != nil {
-			log.Fatalln(err)
-		}
-
-		handleClient(client, local)
-	}
-
-}
-
 func buildVersion(version, commit, date, builtBy, treeState string) goversion.Info {
 	return goversion.GetVersionInfo(
 		goversion.WithAppDetails("goreleaser", "Deliver Go Binaries as fast and easily as possible", website),
@@ -282,4 +353,29 @@ func buildVersion(version, commit, date, builtBy, treeState string) goversion.In
 			}
 		},
 	)
+}
+
+
+
+
+/*Port forwarding*/
+func handleRequestPortForwarding(conn net.Conn) {
+	fmt.Println("new client")
+
+	// proxy, err := net.Dial("tcp", "127.0.0.1:8082")
+    fmt.Println(remoteEndpoint.String())
+	proxy, err := net.Dial("tcp", remoteEndpoint.String())
+	if err != nil {
+		panic(err)
+	}
+
+	fmt.Println("proxy connected")
+	go copyIO(conn, proxy)
+	go copyIO(proxy, conn)
+}
+
+func copyIO(src, dest net.Conn) {
+	defer src.Close()
+	defer dest.Close()
+	io.Copy(src, dest)
 }
