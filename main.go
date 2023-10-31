@@ -13,7 +13,6 @@ package main
 
 import (
 	"flag"
-	"time"
 	"fmt"
 	goversion "github.com/caarlos0/go-version"
 	"golang.org/x/crypto/ssh"
@@ -23,10 +22,11 @@ import (
 	"net"
 	"os"
 	"strconv"
+	"time"
 )
 
 var (
-	action                  = flag.String("action", "reverse-tunnel", "reverse-tunnel, fordard-ports")
+	action                = flag.String("action", "reverse-tunnel", "reverse-tunnel, fordard-ports")
 	argServerSshKeyFile   = flag.String("serverSshKeyFile", "", "ssh key file")
 	argServerSshUsername  = flag.String("serverSshUsername", "", "ssh username")
 	argServerSshPort      = flag.String("serverSshPort", "", "ssh port")
@@ -82,33 +82,31 @@ func (endpoint *Endpoint) String() string {
 func init() {
 	flag.Parse()
 
-    readCommonParameters();
+	readCommonParameters()
 	switch ac := *action; ac {
 	case "reverse-tunnel":
-        readParamsReverseTunnel();
+		readParamsReverseTunnel()
 	case "port-forwarding":
-        //readParamsReverseTunnel();
-        readParamsFordardPorts();
+		//readParamsReverseTunnel();
+		readParamsFordardPorts()
 	default:
 		// freebsd, openbsd,
 		// plan9, windows...
 		fmt.Printf("Not Action Valid! %s.\n", ac)
-    }
+	}
 }
 
 func main() {
 
-
 	switch ac := *action; ac {
 	case "reverse-tunnel":
-        startReverseTunnel();
+		startReverseTunnel()
 	case "port-forwarding":
-        startPortForwarind();
+		startPortForwarind()
 	default:
 		fmt.Printf("Not Action Valid! %s.\n", ac)
-    }
+	}
 }
-
 
 func readParamsFordardPorts() {
 
@@ -118,69 +116,91 @@ func readParamsReverseTunnel() {
 }
 func readCommonParameters() {
 
-	if serverSshKeyFile == "" {
-        if serverSshKeyFile = os.Getenv("SERVER_SSH_KEY_FILE"); serverSshKeyFile == "" {
-            serverSshKeyFile = *argServerSshKeyFile
-        }
-    }
-
-	if serverSshUsername == "" {
-        if serverSshUsername = os.Getenv("SERVER_SSH_USERNAME"); serverSshUsername == "" {
-            serverSshUsername = *argServerSshUsername
-        }
+	if *argServerSshKeyFile == "" {
+		if os.Getenv("SERVER_SSH_KEY_FILE") != "" {
+			serverSshKeyFile = os.Getenv("SERVER_SSH_KEY_FILE")
+		}
+	} else {
+		serverSshKeyFile = *argServerSshKeyFile
 	}
 
-	if serverSshPort == "" {
-        if serverSshPort = os.Getenv("SERVER_SSH_PORT"); serverSshPort == "" {
-            serverSshPort = *argServerSshPort
-        } else {
-            //serverSshPort, _ = strconv.Atoi(envServerSshPort)
-        }
-    }
+	if *argServerSshUsername == "" {
+		if os.Getenv("SERVER_SSH_USERNAME") != "" {
+			serverSshUsername = os.Getenv("SERVER_SSH_USERNAME")
+		}
+	} else {
+		serverSshUsername = *argServerSshUsername
 
-	// if remoteEndpointHost = os.Getenv("SERVER_ENDPOINT_HOST");remoteEndpointHost== "" {
-	if serverEndpointHost == "" {
-        if serverEndpointHost = os.Getenv("SERVER_ENDPOINT_HOST"); serverEndpointHost == "" {
-            serverEndpointHost = *argRemoteEndpointHost
-        }
 	}
 
-	if remoteEndpointHost == "" {
-        if remoteEndpointHost = os.Getenv("REMOTE_ENDPOINT_HOST"); remoteEndpointHost == "" {
-            remoteEndpointHost = *argRemoteEndpointHost
-        }
-    }
+	if *argServerSshPort == "" {
+		if os.Getenv("SERVER_SSH_PORT") != "" {
 
-	if remoteEndpointPort == "" {
-        if remoteEndpointPort = os.Getenv("REMOTE_ENDPOINT_PORT"); remoteEndpointPort == "" {
-            remoteEndpointPort = *argRemoteEndpointPort
-        } else {
-            //remoteEndpointPort, _ = strconv.Atoi(envRemoteEndpointPort)
-        }
+			serverSshPort = os.Getenv("SERVER_SSH_PORT")
 
-    }
+		}
 
-	if localEndpointPort == "" {
-        if localEndpointPort = os.Getenv("LOCAL_ENDPOINT_PORT"); localEndpointPort == "" {
-            localEndpointPort = *argLocalEndpointPort
-        } else {
-            // localEndpointPort, _ = strconv.Atoi(envLocalEndpointPort)
-        }
-    }
+	} else {
+		serverSshPort = *argServerSshPort
 
-	if localEndpointHost == "" {
-        if localEndpointHost = os.Getenv("LOCAL_ENDPOINT_HOST"); localEndpointHost == "" {
-            localEndpointHost = *argLocalEndpointHost
-        }
 	}
 
-    argServerSshPort, _ := strconv.Atoi(serverSshPort)
+	if *argServerEndpointHost == "" {
+		if os.Getenv("SERVER_ENDPOINT_HOST") != "" {
+
+			serverEndpointHost = os.Getenv("SERVER_ENDPOINT_HOST")
+		}
+	} else {
+		serverEndpointHost = *argServerEndpointHost
+
+	}
+
+	if *argRemoteEndpointHost == "" {
+		if os.Getenv("REMOTE_ENDPOINT_HOST") != "" {
+			remoteEndpointHost = os.Getenv("REMOTE_ENDPOINT_HOST")
+
+		}
+	} else {
+		remoteEndpointHost = *argRemoteEndpointHost
+
+	}
+
+	if *argRemoteEndpointPort == "" {
+		if os.Getenv("REMOTE_ENDPOINT_PORT") != "" {
+
+			remoteEndpointPort = os.Getenv("REMOTE_ENDPOINT_PORT")
+		}
+
+	} else {
+		remoteEndpointPort = *argRemoteEndpointPort
+
+	}
+
+	if *argLocalEndpointPort == "" {
+		if os.Getenv("LOCAL_ENDPOINT_PORT") != "" {
+			localEndpointPort = os.Getenv("LOCAL_ENDPOINT_PORT")
+		}
+	} else {
+		localEndpointPort = *argLocalEndpointPort
+
+	}
+
+	if *argLocalEndpointHost == "" {
+		if os.Getenv("LOCAL_ENDPOINT_HOST") != "" {
+			localEndpointHost = os.Getenv("LOCAL_ENDPOINT_HOST")
+		}
+	} else {
+		localEndpointHost = *argLocalEndpointHost
+
+	}
+
+	argServerSshPort, _ := strconv.Atoi(serverSshPort)
 	argRemoteEndpointPort, _ := strconv.Atoi(remoteEndpointPort)
-	argLocalEndpointPort, _	:= strconv.Atoi(localEndpointPort)
+	argLocalEndpointPort, _ := strconv.Atoi(localEndpointPort)
 
 	serverEndpoint = Endpoint{
 		Host: serverEndpointHost,
-        Port: argServerSshPort,
+		Port: argServerSshPort,
 	}
 	remoteEndpoint = Endpoint{
 		Host: remoteEndpointHost,
@@ -191,22 +211,22 @@ func readCommonParameters() {
 		Port: argLocalEndpointPort,
 	}
 
-    fmt.Println("serverSshKeyFile", serverSshKeyFile)
-    fmt.Println("serverSshUsername", "**********")
-    fmt.Println("serverSshPort", serverSshPort)
-    fmt.Println("serverEndpointHost", serverEndpointHost)
-    fmt.Println("remoteEndpointHost", remoteEndpointHost)
-    fmt.Println("remoteEndpointPort", remoteEndpointPort)
-    fmt.Println("localEndpointPort", localEndpointPort)
-    fmt.Println("localEndpointHost", localEndpointHost)
+	fmt.Println("serverSshKeyFile", serverSshKeyFile)
+	fmt.Println("serverSshUsername", "**********")
+	fmt.Println("serverSshPort", serverSshPort)
+	fmt.Println("serverEndpointHost", serverEndpointHost)
+	fmt.Println("remoteEndpointHost", remoteEndpointHost)
+	fmt.Println("remoteEndpointPort", remoteEndpointPort)
+	fmt.Println("localEndpointPort", localEndpointPort)
+	fmt.Println("localEndpointHost", localEndpointHost)
 }
 
 func startPortForwarind() {
 	// ln, err := net.Listen("tcp", ":8000")
 	fmt.Println(localEndpoint.String())
-    if true {
-        //return
-    }
+	if true {
+		//return
+	}
 	ln, err := net.Listen("tcp", localEndpoint.String())
 	if err != nil {
 		panic(err)
@@ -258,17 +278,17 @@ func startReverseTunnel() {
 		if err != nil {
 			// log.Fatalln(fmt.Printf("Dial INTO local service error: %s", err))
 			log.Println(fmt.Printf("Dial INTO local service error: %s", err))
-            time.Sleep(5 * time.Second)
-            //continue
+			time.Sleep(5 * time.Second)
+			//continue
 		} else {
 
-            client, err := listener.Accept()
-            if err != nil {
-                log.Fatalln(err)
-            }
+			client, err := listener.Accept()
+			if err != nil {
+				log.Fatalln(err)
+			}
 
-            handleClientReverseTunnel(client, local)
-        }
+			handleClientReverseTunnel(client, local)
+		}
 	}
 }
 
@@ -355,15 +375,12 @@ func buildVersion(version, commit, date, builtBy, treeState string) goversion.In
 	)
 }
 
-
-
-
 /*Port forwarding*/
 func handleRequestPortForwarding(conn net.Conn) {
 	fmt.Println("new client")
 
 	// proxy, err := net.Dial("tcp", "127.0.0.1:8082")
-    fmt.Println(remoteEndpoint.String())
+	fmt.Println(remoteEndpoint.String())
 	proxy, err := net.Dial("tcp", remoteEndpoint.String())
 	if err != nil {
 		panic(err)
