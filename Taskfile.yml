@@ -24,7 +24,7 @@ tasks:
 
   reverse-tunnel:
     cmds:
-      - go run main.go --action=reverse-tunnel
+      - go run main.go --action=reverse-tunnel --unMask
 
   port-forwarding:
     env:
@@ -34,7 +34,7 @@ tasks:
       LOCAL_ENDPOINT_HOST: 'localhost'
     cmds:
       #- echo $LOCAL_ENDPOINT_PORT
-      - go run main.go --action=port-forwarding
+      - go run main.go --action=port-forwarding --unMask
 
 
   release:
@@ -65,3 +65,9 @@ tasks:
         sh: 'if [[ $GITHUB_REF != refs/tags/v* ]]; then echo "--snapshot"; fi'
     cmds:
       - goreleaser release --clean --timeout 60m {{.SNAPSHOT}}
+
+  publish:
+    cmds:
+      - aws s3 cp dist/reverse-tunnel_windows_amd64_v1/reverse-tunnel.exe s3://{{.BUCKET_NAME}}/{{.REMOTE_PREFIX}}/reverse-tunnel/reverse-tunnel.exe --profile traze
+
+

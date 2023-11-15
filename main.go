@@ -12,6 +12,8 @@ MIT License, http://www.opensource.org/licenses/mit-license.php
 package main
 
 import (
+    "path/filepath"
+    "strings"
 	"flag"
 	"fmt"
 	goversion "github.com/caarlos0/go-version"
@@ -27,6 +29,7 @@ import (
 
 var (
 	action                = flag.String("action", "reverse-tunnel", "reverse-tunnel, fordard-ports")
+	unMask                = flag.Bool("unMask", false, "true or false")
 	argServerSshKeyFile   = flag.String("serverSshKeyFile", "", "ssh key file")
 	argServerSshUsername  = flag.String("serverSshUsername", "", "ssh username")
 	argServerSshPort      = flag.String("serverSshPort", "", "ssh port")
@@ -102,7 +105,7 @@ func main() {
 	case "reverse-tunnel":
 		startReverseTunnel()
 	case "port-forwarding":
-		startPortForwarind()
+		startPortForwarding()
 	default:
 		fmt.Printf("Not Action Valid! %s.\n", ac)
 	}
@@ -211,17 +214,30 @@ func readCommonParameters() {
 		Port: argLocalEndpointPort,
 	}
 
-	fmt.Println("serverSshKeyFile", serverSshKeyFile)
-	fmt.Println("serverSshUsername", "**********")
-	fmt.Println("serverSshPort", serverSshPort)
-	fmt.Println("serverEndpointHost", serverEndpointHost)
-	fmt.Println("remoteEndpointHost", remoteEndpointHost)
-	fmt.Println("remoteEndpointPort", remoteEndpointPort)
-	fmt.Println("localEndpointPort", localEndpointPort)
-	fmt.Println("localEndpointHost", localEndpointHost)
+    sshPath := filepath.Dir(serverSshKeyFile)
+    file := filepath.Base(serverSshKeyFile)
+    ext := filepath.Ext(serverSshKeyFile)
+
+    maskServerSshKeyFile := sshPath + "/" + strings.Repeat("*", len(fileNameWithoutExtTrimSuffix(file))) + "." + ext
+    maskServerSshUsername := strings.Repeat("*", len(serverSshUsername))
+
+    if (*unMask == true) {
+        maskServerSshKeyFile = serverSshKeyFile
+        maskServerSshUsername = serverSshUsername
+    }
+
+
+    fmt.Println("Server Ssh KeyFile:", maskServerSshKeyFile)
+    fmt.Println("Server Ssh Username:", maskServerSshUsername)
+    fmt.Println("Server Ssh Port:", serverSshPort)
+    fmt.Println("Server Endpoint Host:", serverEndpointHost)
+    fmt.Println("Remote Endpoint Host:", remoteEndpointHost)
+    fmt.Println("Remote Endpoint Port:", remoteEndpointPort)
+    fmt.Println("Local Endpoint Port:", localEndpointPort)
+    fmt.Println("Local Endpoint Host:", localEndpointHost)
 }
 
-func startPortForwarind() {
+func startPortForwarding() {
 	// ln, err := net.Listen("tcp", ":8000")
 	fmt.Println(localEndpoint.String())
 	if true {
@@ -395,4 +411,7 @@ func copyIO(src, dest net.Conn) {
 	defer src.Close()
 	defer dest.Close()
 	io.Copy(src, dest)
+}
+func fileNameWithoutExtTrimSuffix(fileName string) string {
+	return strings.TrimSuffix(fileName, filepath.Ext(fileName))
 }
